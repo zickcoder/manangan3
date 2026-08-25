@@ -10,7 +10,6 @@ import {
   BarChart3, 
   ChevronRight, 
   LogOut, 
-  ExternalLink,
   X
 } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -134,19 +133,6 @@ export function AppSidebar({ isOpen, onClose }: SidebarProps) {
               })}
             </div>
           ))}
-
-          {/* Quick link to Public Portal */}
-          <div className="pt-2">
-            <a
-              href="/portal"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium bg-emerald-950/40 text-emerald-300 border border-emerald-800/40 hover:bg-emerald-900/50 transition-colors"
-            >
-              <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-              <span>Public Citizen Portal</span>
-            </a>
-          </div>
         </div>
       </div>
 
