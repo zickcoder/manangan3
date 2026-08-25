@@ -86,9 +86,10 @@ export function PublicPortal() {
   const [utilitySubmitting, setUtilitySubmitting] = useState(false);
 
   // 4. Cemetery Plot Search & Burial State
-  const [cemeteries, setCemeteries] = useState<string[]>([]);
+  const [cemeteries, setCemeteries] = useState<string[]>(['Barangay 178 Municipal Cemetery']);
   const [selectedCemetery, setSelectedCemetery] = useState<string>('Barangay 178 Municipal Cemetery');
   const [plots, setPlots] = useState<CemeteryPlot[]>([]);
+  const [burialError, setBurialError] = useState('');
   const [isVisualPlotModalOpen, setIsVisualPlotModalOpen] = useState(false);
   const [selectedPlot, setSelectedPlot] = useState<CemeteryPlot | null>(null);
 
@@ -97,7 +98,7 @@ export function PublicPortal() {
     date_of_birth: '1950-01-01',
     date_of_death: new Date().toISOString().split('T')[0],
     burial_date: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
-    plot_id: 1,
+    plot_id: 0,
     contact_person: '',
     contact_phone: '',
   });
@@ -107,8 +108,10 @@ export function PublicPortal() {
   useEffect(() => {
     fetchFacilities().then(setFacilities).catch(console.error);
     fetchCemeteries().then((list) => {
-      setCemeteries(list);
-      if (list.length > 0) setSelectedCemetery(list[0]);
+      if (list.length > 0) {
+        // Merge with default to avoid empty dropdown flash
+        setCemeteries(Array.from(new Set(['Barangay 178 Municipal Cemetery', ...list])));
+      }
     }).catch(console.error);
 
     const initialRef = searchParams.get('ref');
@@ -116,18 +119,27 @@ export function PublicPortal() {
       setTrackRef(initialRef);
       handleTrack(initialRef);
     }
-  }, [searchParams]);
+  }, []);
 
+  // Always re-load plots when cemetery changes
   useEffect(() => {
-    fetchCemeteryPlots('all', 'all', selectedCemetery).then((plotList) => {
+    fetchCemeteryPlots('all', 'all', 'all').then((plotList) => {
       setPlots(plotList);
-      if (plotList.length > 0 && !selectedPlot) {
-        const firstAvail = plotList.find(p => p.status === 'Available') || plotList[0];
+      // Auto-select first available plot
+      const firstAvail = plotList.find((p: CemeteryPlot) => p.status === 'Available') || null;
+      if (firstAvail) {
         setSelectedPlot(firstAvail);
         setBurialForm(prev => ({ ...prev, plot_id: firstAvail.id }));
       }
     }).catch(console.error);
   }, [selectedCemetery]);
+
+  // Keep plot_id in sync whenever selectedPlot changes
+  useEffect(() => {
+    if (selectedPlot) {
+      setBurialForm(prev => ({ ...prev, plot_id: selectedPlot.id }));
+    }
+  }, [selectedPlot]);
 
   const handleTrack = async (code = trackRef) => {
     if (!code.trim()) return;
@@ -200,14 +212,22 @@ export function PublicPortal() {
 
   const handleBurialSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setBurialError('');
+    if (!selectedPlot || !burialForm.plot_id) {
+      setBurialError('Please select an available burial plot from the visual map before submitting.');
+      return;
+    }
     setBurialSubmitting(true);
     try {
-      const res = await createBurial(burialForm);
+      const payload = { ...burialForm, plot_id: selectedPlot.id };
+      const res = await createBurial(payload);
       if (res.success) {
-        setBurialSuccess(res.data);
+        setBurialSuccess(res.data || res);
+      } else {
+        setBurialError(res.message || 'Submission failed. Please try again.');
       }
-    } catch (e) {
-      alert('Failed to file burial application');
+    } catch (err) {
+      setBurialError('Failed to submit burial application. Please check your connection.');
     } finally {
       setBurialSubmitting(false);
     }
@@ -771,12 +791,15 @@ export function PublicPortal() {
                   size="md"
                   onClick={() => {
                     setBurialSuccess(null);
+                    setBurialError('');
+                    const nextAvail = plots.find(p => p.status === 'Available') || null;
+                    if (nextAvail) setSelectedPlot(nextAvail);
                     setBurialForm({
                       deceased_name: '',
                       date_of_birth: '1950-01-01',
                       date_of_death: new Date().toISOString().split('T')[0],
                       burial_date: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
-                      plot_id: plots[0]?.id || 1,
+                      plot_id: nextAvail?.id || 0,
                       contact_person: '',
                       contact_phone: '',
                     });
@@ -928,6 +951,13 @@ export function PublicPortal() {
                           value={burialForm.contact_phone}
                           onChange={(e) => setBurialForm({ ...burialForm, contact_phone: e.target.value })}
                         />
+
+                        {burialError && (
+                          <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 font-medium flex items-start gap-2">
+                            <span className="shrink-0 mt-0.5">⚠️</span>
+                            <span>{burialError}</span>
+                          </div>
+                        )}
 
                         <div className="pt-2 flex justify-end">
                           <Button type="submit" size="lg" isLoading={burialSubmitting} className="px-8 font-bold bg-purple-600 hover:bg-purple-700 text-white">

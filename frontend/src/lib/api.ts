@@ -1,6 +1,8 @@
 // Smart Hybrid API Client with Complete Browser Storage Fallback for GOVSERVE
 const rawBase = (import.meta as any).env?.VITE_API_URL || '';
 const API_BASE = rawBase ? `${rawBase.replace(/\/$/, '')}/api` : '/api';
+// Only attempt real API calls when a backend URL is explicitly configured
+const HAS_BACKEND = Boolean(rawBase);
 
 // Initial Seed Data (from database_schema_and_seed.sql)
 const DEFAULT_FACILITIES = [
@@ -259,7 +261,7 @@ export function initLocalStore() {
 initLocalStore();
 
 export async function fetchStats() {
-  try {
+  if (HAS_BACKEND) try {
     const res = await fetch(`${API_BASE}/stats`);
     if (res.ok) {
       const data = await res.json();
@@ -290,7 +292,7 @@ export async function fetchStats() {
 }
 
 export async function fetchFacilities(category = 'all') {
-  try {
+  if (HAS_BACKEND) try {
     const res = await fetch(`${API_BASE}/facilities?category=${encodeURIComponent(category)}`);
     if (res.ok) {
       const data = await res.json();
@@ -306,7 +308,7 @@ export async function fetchFacilities(category = 'all') {
 }
 
 export async function fetchReservations(status = 'all', category = 'all') {
-  try {
+  if (HAS_BACKEND) try {
     const res = await fetch(`${API_BASE}/facilities/reservations?status=${encodeURIComponent(status)}&category=${encodeURIComponent(category)}`);
     if (res.ok) {
       const data = await res.json();
@@ -322,7 +324,7 @@ export async function fetchReservations(status = 'all', category = 'all') {
 }
 
 export async function createReservation(payload: any) {
-  try {
+  if (HAS_BACKEND) try {
     const res = await fetch(`${API_BASE}/facilities/reservations`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -346,7 +348,7 @@ export async function createReservation(payload: any) {
 }
 
 export async function updateReservationStatus(id: number, status: string, remarks?: string, reviewer_name?: string) {
-  try {
+  if (HAS_BACKEND) try {
     const res = await fetch(`${API_BASE}/facilities/reservations/${id}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -386,14 +388,13 @@ export async function checkFacilityAI(facilityName: string, eventDate: string, s
   };
 }
 
-export async function fetchCemeteries() {
-  return [
-    { id: 1, name: 'Barangay 178 Municipal Cemetery', type: 'Public / Municipal', capacity: '1,200 Niches & Plots' }
-  ];
+export async function fetchCemeteries(): Promise<string[]> {
+  // Return plain strings so components can use them directly as option values/labels
+  return ['Barangay 178 Municipal Cemetery'];
 }
 
 export async function fetchCemeteryPlots(section = 'all', status = 'all', cemetery_name = 'all') {
-  try {
+  if (HAS_BACKEND) try {
     const res = await fetch(`${API_BASE}/cemetery/plots?section=${encodeURIComponent(section)}&status=${encodeURIComponent(status)}&cemetery_name=${encodeURIComponent(cemetery_name)}`);
     if (res.ok) {
       const data = await res.json();
@@ -412,7 +413,7 @@ export async function fetchCemeteryPlots(section = 'all', status = 'all', cemete
 }
 
 export async function updatePlotStatus(id: number, status: string) {
-  try {
+  if (HAS_BACKEND) try {
     const res = await fetch(`${API_BASE}/cemetery/plots/${id}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -470,7 +471,7 @@ export async function createBatchPlots(payload: any) {
 }
 
 export async function fetchBurials() {
-  try {
+  if (HAS_BACKEND) try {
     const res = await fetch(`${API_BASE}/cemetery/burials`);
     if (res.ok) {
       const data = await res.json();
@@ -482,7 +483,7 @@ export async function fetchBurials() {
 }
 
 export async function createBurial(payload: any) {
-  try {
+  if (HAS_BACKEND) try {
     const res = await fetch(`${API_BASE}/cemetery/burials`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -513,7 +514,7 @@ export async function createBurial(payload: any) {
 }
 
 export async function fetchUtilities(status = 'all', service_type = 'all') {
-  try {
+  if (HAS_BACKEND) try {
     const res = await fetch(`${API_BASE}/utilities?status=${encodeURIComponent(status)}&service_type=${encodeURIComponent(service_type)}`);
     if (res.ok) {
       const data = await res.json();
@@ -532,7 +533,7 @@ export async function fetchUtilities(status = 'all', service_type = 'all') {
 }
 
 export async function createUtilityRequest(payload: any) {
-  try {
+  if (HAS_BACKEND) try {
     const res = await fetch(`${API_BASE}/utilities`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -558,7 +559,7 @@ export async function createUtilityRequest(payload: any) {
 }
 
 export async function updateUtilityStatus(id: number, status: string, assigned_team?: string, resolution_notes?: string) {
-  try {
+  if (HAS_BACKEND) try {
     const res = await fetch(`${API_BASE}/utilities/${id}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -579,7 +580,7 @@ export async function updateUtilityStatus(id: number, status: string, assigned_t
 }
 
 export async function fetchAssets(category = 'all', condition = 'all') {
-  try {
+  if (HAS_BACKEND) try {
     const res = await fetch(`${API_BASE}/assets?category=${encodeURIComponent(category)}&condition=${encodeURIComponent(condition)}`);
     if (res.ok) {
       const data = await res.json();
@@ -598,7 +599,7 @@ export async function fetchAssets(category = 'all', condition = 'all') {
 }
 
 export async function createAsset(payload: any) {
-  try {
+  if (HAS_BACKEND) try {
     const res = await fetch(`${API_BASE}/assets`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -622,7 +623,7 @@ export async function createAsset(payload: any) {
 }
 
 export async function updateAssetCondition(id: number, current_condition: string, next_maintenance_due?: string, ai_maintenance_alert?: string) {
-  try {
+  if (HAS_BACKEND) try {
     const res = await fetch(`${API_BASE}/assets/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -643,7 +644,7 @@ export async function updateAssetCondition(id: number, current_condition: string
 }
 
 export async function trackUniversalReference(refNo: string) {
-  try {
+  if (HAS_BACKEND) try {
     const res = await fetch(`${API_BASE}/track/${encodeURIComponent(refNo)}`);
     if (res.ok) return await res.json();
   } catch {}
@@ -671,7 +672,7 @@ export async function trackUniversalReference(refNo: string) {
 }
 
 export async function fetchActivityLogs() {
-  try {
+  if (HAS_BACKEND) try {
     const res = await fetch(`${API_BASE}/activity`);
     if (res.ok) {
       const data = await res.json();
@@ -686,7 +687,7 @@ export async function fetchActivityLogs() {
 }
 
 export async function loginStaff(email: string, password: string) {
-  try {
+  if (HAS_BACKEND) try {
     const res = await fetch(`${API_BASE}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
